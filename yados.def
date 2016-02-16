@@ -1,0 +1,84 @@
+
+
+SCALL	macro
+	jsr	0xd934
+	.db	\1
+	endm
+
+SGETMNT		equ	0	; Get Mount Table Entry
+SGETDEV		equ	1	; Get Device Table Entry
+SSETUP		equ	2	; Pre-command setup
+SEXECMD		equ	3	; do command
+SREGDRV		equ	4	; Register Driver
+SDWSETUP	equ	5	; DriveWire Setup (device select)
+SDWREAD		equ	6	; DriveWire Read
+SDWWRITE	equ	7	; DriveWire Write
+SDWTRANS	equ	8	; DriveWire Transaction
+
+	
+
+;;; DSKCON Equates
+DCSEC          equ       $ED                 DSKCON Sector
+DCSTAT         equ       $F0                 DSKCON Status
+
+
+;;; This is a new table of Mounts. It is parallel to the FAT tables,
+;;; both tables are indexed with DCDRV
+	org 	0
+MNTFLG	rmb	1	 ; Mount Flags (<>0 is mounted)
+	;; bits 0-2 : index to Device table
+	;; bits 3-6 : partition or minor number
+	;; bit  7   : valid mount flag
+MNTDEV	rmb	1	 ; Major No.
+MNTSUB	rmb	1	 ; sub-device no
+MNTOFF	rmb	3	 ; Paritition Offset
+MNTZ	equ     *        ; size of this structure
+
+
+;;; This is the Device table - stores the less dynamic
+;;; data about physical setup.
+        org     0
+DEVDRV	rmb	1	; Driver No / MPI slot
+	;; bits 0-3 : index to driver table
+	;; bits 4-5 : MPI setting
+	;; bit  7   : valid flag
+DEVADD	rmb	1	; Hardware Base Address ( msb assumed 0xff )
+DEVRES	rmb	1	; reserved
+DEVZ	equ	*	; size of this structure
+	
+
+;;; These are really just defines for
+;;; *some* of regular DSKCON's opcodes
+;;; they are a HDB legacy when every driver
+;;; had it's own opcodes.
+SRBLK	 equ	   2        ; System right block
+SWBLK	 equ	   3        ; System write block
+
+
+;; This is a block of memory used by the various
+;; drivers for temporary storage.
+
+         org       $F3
+VCMD     rmb       1        ; SCSI/IDE unit command
+VAD0     rmb       1        ; L.U.N. / sector (hi-byte)
+VAD1     rmb       2        ; Sector (lo-word)
+VBLKS    rmb       2        ; Block count / options
+VEXT     rmb       4        ; Reserved 10 byte SCSI commands
+RAMFLG	 rmb	   1        ; used as a flag for bouncing down
+RETRY	 rmb	   1	    ; used as temp buffer BAD!!!
+
+         IFDEF     DRAGON
+         org       $13F
+         ELSE
+         org       $149
+         ENDC
+MPISTRT  rmb	   1	    ; startup MPI setting
+TEMP1	 rmb	   2	    ; temp storage
+TEMP2	 rmb	   2	    ; temp storage
+EXTDRV0  rmb	   2	    ; external driver 0
+EXTDRV1	 rmb	   2	    ; external driver 1
+
+;;; Some temporary working variable
+
+TEMP3	 equ	   0x1d1    ; storage for dwext.asm's longjump
+TEMP4	 equ	   0x1d3    ; storage for dwext.asm

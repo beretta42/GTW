@@ -1,0 +1,88 @@
+
+:prefix 000      RPLY_ERSF   :yada yada
+:prefix PRIVMSG  #chan       :yada yada
+
+
+
+YA-DOS:  has magic
+HDBDOS:  C101 will be a NOP... 
+SDC-DOS: dff0 will be "dd e4 de a4"
+
+
+From Darren A., concerning using SDC-DOS's dw routines:
+
+
+The ROM contains vectors to the four I/O routines starting at $DFF0:
+
+$DFF0 = CoCo 2/3 receiver
+$DFF2 = CoCo 2/3 transmitter
+$DFF4 = CoCo 1 receiver
+$DFF6 = CoCo 1 transmitter
+
+During initialization, SDC-DOS 1.2 stores either $DFF0 or $DFF4 in RAM at $0076.  Calls to the routines are then performed like this:
+
+  ldu   $0076
+  jsr   [2,u]     call transmitter
+  ...
+  jsr   [,u]      call receiver
+
+
+Please note that the use of RAM locations $0076-77 may change in future versions, but the vector locations ($DFFx) are to remain the same.
+
+
+
+
+get server / port
+get user name
+get nickname
+
+client connect / join chan
+announce itself
+wait for bomb
+
+
+256 x 192 =
+ 32 x  24 
+
+
+
+SWWWWWWW WFFFFFFF
+
+
+d x u
+angle_abs
+draw_missle
+
+
+
+
+
+TODO
+
+
+* refactor draw_missle / undraw_missle
+* No arrow keys in Mess: turn on 'emulated keyboard' from gui control
+* test determinalistic terrain handling.
+* Make a proper set of avatars
+* text system
+* player stat screen
+* reset game
+* rising terrain
+* hit / destroy explosions
+* dying player's missile is left on screen.
+* keyboard scanning change pia directions to make simple scan work...!!!
+
+
+Field BUGS:
+* multiple servers suck!
+* clear out player scores on delete_player.
+* player to die on QUIT/PART
+
+graphical shits are bad
+server mode lockout
+sound - problem!
+dw protocol (thanks bill)
+non-artifacting setting for the CoCo3
+in-game chat
+vince stuck in hole.
+
