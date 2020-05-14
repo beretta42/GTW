@@ -749,7 +749,7 @@ do_toggle
 	ldx	me
 	jsr	send_ack
 b@	jsr	send_basic
-	jsr	clr_pscr
+*	jsr	clr_pscr	; fixme: ok for clients not for server
 	jsr	draw_play
 	clr	in_mode
 	ldx	#m3
@@ -1718,12 +1718,17 @@ comm_init
 	jsr	send
 	;; return
 	rts
-p@	fcn	"tcp connect irc.freenode.net 6667"
+p@	fcn	"tcp connect play-classics.net 6667"
 
 
 ;;; Called at startup after receiving a 
 ;;; 'OK' on TCP connect from DW
 irc_init
+	;; send PASS message
+	ldx	#p3@
+	jsr	appString
+	jsr	appCRLF
+	jsr	send
 	;; send NICK message
 	ldx	#p2@
 	jsr	appString
@@ -1749,7 +1754,7 @@ irc_init
 p1@	fcn	"USER "
 p11@	fcn	" 0 * "
 p2@	fcn	"NICK "
-
+p3@     fcn     "PASS 6809"
 
 
 join_game
@@ -2167,7 +2172,7 @@ mparse	pshs	d,x,y,u
 	ldd	#ibuff		; input buffer
 	std	ppos		; parse position
 	ldb	init_mode	; are we awaiting connect?
-	cmpb	#2
+	cmpb	#1
 	beq	c@		; we are connected....
 	;; awaiting connect and have DW response line
 	ldd	ibuff		; get first two byte
@@ -2176,7 +2181,7 @@ mparse	pshs	d,x,y,u
 	inc	init_mode	; got OK, so goto DW connect mode
 	ldb	init_mode
 	cmpb	#1
-	beq	out@
+*	beq	out@
 *	ldx	#$8000
 *d@	leax	-1,x		; delay a lil' bit
 *	bne	d@
