@@ -15,6 +15,13 @@ P_NAME	rmb	16		; player name
 P_SCORE	rmb	2		; player score
 P_AVA	rmb	1		; player's avatar no.
 P_HP	rmb	1		; hit points
+	;; next variables are for newly xmited missles
+	;; while we're still processing the old one
+P_MQ	rmb	1		; does this queue need processing ?
+P_MX2	rmb	2
+P_MY2	rmb	2
+P_VX2	rmb	2
+P_VY2	rmb	2
 P_Z	equ	*		; size of struct
 
 ST_MISS	equ	$1		; player missle is live
@@ -1160,7 +1167,9 @@ a@	lda	P_STATE,x	; get player state
 	bcc	c@
 	jsr	col_terrain
 	bcs	j@		; no terrain collision
-c@	ldb	P_STATE,x	; get status
+c@	tst	P_MQ,x
+	bne	unque_missle
+k@	ldb	P_STATE,x	; get status
 	andb	#~ST_MISS	; turn off missile
 	stb	P_STATE,x	; 
 	bra	b@
@@ -1174,8 +1183,18 @@ b@	andcc	#~$10
 	;; leave
 	jsr	display_angle
 	rts
-
-
+	;; load up the queued missle
+unque_missle
+	ldd	P_MX2,x		; copy the queued missle to the active one
+	std	P_MX,x
+	ldd	P_MY2,x
+	std	P_MY,x
+	ldd	P_VX2,x
+	std	P_VX,x
+	ldd	P_VY2,x
+	std	P_VY,x
+	clr	P_MQ,x		; clear the queued missle flag
+	bra	j@		; draw queued missle and proceed to next player
 
 	
 ;;; collide a missle against a player
@@ -1416,7 +1435,7 @@ do_space
 	orb	#ST_MISS	; set missile flag
 	stb	P_STATE,x
 	;; set shot timer
-	ldb	#30		; 1.5 seconds @ 20hz
+	ldb	#0		; 1.5 seconds @ 20hz
 	stb	shot
 	;; set X coord
 	clrb
@@ -1718,7 +1737,7 @@ comm_init
 	jsr	send
 	;; return
 	rts
-p@	fcn	"tcp connect play-classics.net 6667"
+p@	fcn	"tcp connect play-classics.net 6527"
 
 
 ;;; Called at startup after receiving a 
@@ -2390,7 +2409,7 @@ game_mess
 	cmpb	#'@		; missle message?
 	beq	new_missle
 	cmpb	#'!		; new player message?
-	beq	new_player
+	lbeq	new_player
 	cmpb	#'#		; is a new player acknowledge
 	lbeq	ack_player
 	cmpb	#'$		; a player hit by missile
@@ -2409,8 +2428,13 @@ lift_terrain0
 	
 	;; recv'd a new missle message
 new_missle
+	pshs	cc
+	orcc	#$10
 	jsr	getb		; B = get a byte
 	jsr	getplayer	; X = player struct
+	lda	P_STATE,x	; check for existing missle?
+	anda	#ST_MISS	; already a missle - queue it.
+	bne	que_missle	;
 	pshs	x		; ( *plyr )
 	stb	P_NO,x		; set player number
 	leax	P_STATE,x	; to beginning of state
@@ -2447,7 +2471,26 @@ new_missle
 	;; redraw player
 	jsr	display_player
 	jsr	draw_missle
+	puls	cc
 	jmp	ret
+	;; we have received another missle message, but we're still
+	;; processing the old one - have sata for later
+que_missle
+	leax	P_MQ,x
+	clr	,x		; set queue flag
+	com	,x+
+	jsr	getb		; drop the state
+	jsr	getw		; save MX
+	std	,x++
+	jsr	getw		; save MY
+	std	,x++
+	jsr	getw		; skip X,Y
+	jsr	getw
+	std	,x++		; save VX
+	jsr	getw
+	std	,x++		; save VY
+	puls	cc
+	puls	d,x,y,u,pc	; return
 	
 	;; recv'd a new player message
 new_player
