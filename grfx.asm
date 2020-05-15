@@ -776,6 +776,8 @@ stop@	ldx	me
 	ldb	P_NO,x
 	jsr	delete_player
 	clr	cmode
+	clr	me
+	clr	me+1
 	andcc	#~$10
 	ldx	#m0
 	stx	mstr
@@ -2710,6 +2712,8 @@ a@	cmpx	me		; is me?
 	;; delete player from ptab
 	ldb	1,s
 	jsr	delete_player
+	clr	me
+	clr	me+1
 	puls	d,x,u,pc
 p0@	fcn	"PRIVMSG #coco_war :@^"
 
