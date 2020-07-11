@@ -86,3 +86,17 @@ non-artifacting setting for the CoCo3
 in-game chat
 vince stuck in hole.
 
+
+6/19/2020 - adding new message for terrain / player hits
+
+command codes:
+   !  player requests to join
+   @  player launched a missle
+   #  new player acknoledged by server
+   $  player hit
+   %  player announces basic state
+   ^  player left game
+   &  lift play field
+   *  annouce terrain hit
+
+

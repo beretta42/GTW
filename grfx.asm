@@ -1295,6 +1295,15 @@ col_terrain
 	;; undraw explosion
 	ldu	#land
 	jsr	putplayer
+	;; if we're the server send terrain message
+	tst	serverf
+	beq	c@		; no then leave
+	ldx	#p0@
+	jsr	appString
+	ldb	3,s
+	jsr	appHex
+	jsr	appCRLF
+	jsr	send
 	;; clear top square
 	lda	[1,s]
 	clrb
@@ -1302,7 +1311,7 @@ col_terrain
 	addb	3,s
 	adca	#0
 	tfr	d,x
-	ldu	#playertab
+	ldu	#blank
 	jsr	putplayer
 	inc	[1,s]		; inc, (lower) terrian
 	;; move player
@@ -1323,7 +1332,7 @@ a@	leas	4,s
 	puls	d,x,u,pc
 nocol@	coma			; set carry on no collision
 	bra	a@
-
+p0@	fcn	"PRIVMSG #coco_war :@*"
 
 	
 update
@@ -2421,8 +2430,11 @@ game_mess
 	cmpb	#'^		; is a dead player?
 	lbeq	dead_player
 	cmpb	#'&		; scroll up :)
-	lbeq	lift_terrain0	; call client wrapper
+	lbeq	lift_terrain0	;
+	cmpb	#'*		; terrain hit
+	lbeq	lower_terrain
 	bra	ret
+
 
 lift_terrain0
 	jsr	lift_terrain	; just lift terrain
@@ -2659,6 +2671,35 @@ dead_player
 	jsr	delete_player	; remove player
 	jmp 	ret
 
+;;; called when we receive a terrain announcement
+lower_terrain
+	;; adjust terrain map
+	jsr	getb		; get the terrain X
+	;; clear top square
+	pshs	b		; ( fatx )
+	ldx	#terrain
+	lda	b,x		; a = y fat coord
+	inc	b,x		; increment terrain table
+	clrb			; D = Y coord (fat y * 256)
+	addd	#PSCR
+	addb	,s		; add x coord * 256
+	adca	#0
+	tfr	d,x
+	ldu	#blank
+	jsr	putplayer
+	;; if there's a player here move him down and redraw
+	ldx	#pfield
+	ldb	,s
+	ldb	b,x		; b = player (1 - 8)
+	beq	out@		; no player here so leave
+	decb			; b = plater (0 - 7)
+	jsr	getplayer	; X = player struct
+	jsr	undraw_player
+	inc	P_Y,x
+	jsr	display_player	; draw player
+	;; clean up and return
+out@	leas	1,s		; drop ( )
+	jmp	ret
 
 ;;; Takes: B = play no.
 draw_hit_player
